@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Caulfield LAN Party Vote</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .client-wrap { max-width:560px; margin:0 auto; padding:18px 14px 100px; display:flex; flex-direction:column; gap:16px; }
+    .hero { text-align:center; padding:8px 0 2px; }
+    .hero h1 { font-size:1.5rem; font-weight:900; background:linear-gradient(90deg,#a855f7,#06b6d4); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+    .hero p { font-size:.82rem; color:var(--muted); margin-top:4px; }
+    .anon-note { text-align:center; font-size:.72rem; color:var(--muted); }
+    .section-title { font-size:.7rem; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; color:var(--muted); margin-bottom:10px; }
+    .nom-open-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--r); padding:16px; display:flex; flex-direction:column; gap:10px; }
+    .veto-open-note { text-align:center; font-size:.78rem; color:var(--red); padding:6px; }
+  </style>
+</head>
+<body>
+
+<!-- Nickname modal -->
+<div class="modal-backdrop" id="nickModal">
+  <div class="modal">
+    <div class="modal-logo">🎮</div>
+    <h2>Welcome to<br>Caulfield LAN Party!</h2>
+    <p>Enter your nickname so the admin can see who's voting. Your vote itself stays anonymous.</p>
+    <div class="input-row">
+      <input type="text" id="nickInput" placeholder="Your nickname…" maxlength="30" autocomplete="off">
+      <button class="btn-primary" id="nickBtn">Join</button>
+    </div>
+    <div class="modal-err" id="nickErr"></div>
+  </div>
+</div>
+
+<header>
+  <div>
+    <div class="logo">🎮 Caulfield LAN Party</div>
+    <div class="subtitle">Vote for tonight's games</div>
+  </div>
+  <div class="header-right">
+    <span class="phase-badge phase-idle" id="phaseBadge">IDLE</span>
+    <div class="conn-badge"><span class="dot off" id="connDot"></span><span id="connLabel">Connecting…</span></div>
+    <button class="btn-ghost btn-sm" id="nickEditBtn" style="display:none" title="Change nickname">✏️ <span id="nickDisplay"></span></button>
+  </div>
+</header>
+
+<div id="broadcastBanner" class="broadcast-banner" style="display:none"></div>
+
+<div class="client-wrap">
+  <div class="hero">
+    <h1>What are we playing?</h1>
+    <p>Vote anonymously — results update live</p>
+  </div>
+
+  <!-- Timer bar -->
+  <div class="client-timer">
+    <div class="ct-num" id="ctNum">—</div>
+    <div class="timer-bar-wrap">
+      <div class="timer-bar-track"><div class="timer-bar-fill" id="ctBar" style="width:100%"></div></div>
+      <div class="timer-bar-label" id="ctLabel">Waiting for admin…</div>
+    </div>
+  </div>
+
+  <!-- Status banner -->
+  <div id="statusBanner"></div>
+
+  <!-- Veto open note -->
+  <div class="veto-open-note" id="vetoNote" style="display:none">🚫 Veto mode is open — tap "Veto" on a game to eliminate it from the vote</div>
+
+  <!-- Game list -->
+  <div>
+    <div id="gameList"><div class="empty">Waiting for the game list…</div></div>
+  </div>
+
+  <!-- Nominations form -->
+  <div id="nomSection" style="display:none">
+    <div class="section-title">Suggest a Game</div>
+    <div class="nom-open-card">
+      <div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap">
+        <div style="flex:1;min-width:140px"><input type="text" id="nomName" placeholder="Game name…" maxlength="80"></div>
+        <div><input type="text" id="nomEmoji" placeholder="🎮" maxlength="4" style="width:56px;text-align:center"></div>
+        <button class="btn-primary btn-sm" id="nomSubmit">Submit</button>
+      </div>
+      <div class="emoji-row" id="emojiPicker">
+        🎮 🎯 🏆 🎲 🃏 ⚔️ 🔫 🚀 🏎️ ⚽ 🎵 🧩 🔥 💥 🌍
+      </div>
+    </div>
+  </div>
+
+  <div class="anon-note">🔒 Votes are anonymous — only totals are shown</div>
+</div>
+
+<!-- Winner overlay -->
+<div class="winner-overlay" id="winnerOverlay">
+  <div class="winner-crown">🏆</div>
+  <div class="winner-label">Winner</div>
+  <div class="winner-emoji-big" id="woEmoji">🎮</div>
+  <div class="winner-name" id="woName">—</div>
+  <div class="winner-votes" id="woVotes"></div>
+  <div class="winner-breakdown" id="woBreakdown"></div>
+</div>
+
+<!-- Chat toggle + panel -->
+<button class="chat-toggle" id="chatToggle" title="Hype chat">
+  💬
+  <span class="chat-badge" id="chatBadge">0</span>
+</button>
+<div class="chat-panel" id="chatPanel">
+  <div class="chat-header">🔥 Hype Feed <span style="font-size:.7rem;color:var(--muted);font-weight:400">(anonymous)</span></div>
+  <div class="chat-msgs" id="chatMsgs"></div>
+  <div class="chat-input-row">
+    <input type="text" id="chatInput" placeholder="🔥 Let's go! 👀" maxlength="100">
+    <button class="btn-primary btn-sm" id="chatSend">Send</button>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="sounds.js"></script>
+<script src="confetti.js"></script>
+<script src="wheel.js"></script>
+<script src="client.js"></script>
+</body>
+</html>

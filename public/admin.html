@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Admin — Caulfield LAN Party</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ── Login modal ───────────────────────────────────────────────────────── -->
+<div class="modal-backdrop" id="loginModal">
+  <div class="modal">
+    <div class="modal-logo">🎮</div>
+    <h2>Admin Login</h2>
+    <p>Caulfield LAN Party Vote — enter the admin password to continue.</p>
+    <div class="input-row">
+      <input type="password" id="loginPwd" placeholder="Password" autocomplete="current-password">
+      <button class="btn-primary" id="loginBtn">Enter</button>
+    </div>
+    <div class="modal-err" id="loginErr"></div>
+  </div>
+</div>
+
+<!-- ── Main app (hidden until auth) ─────────────────────────────────────── -->
+<div id="adminApp" style="display:none">
+
+<header>
+  <div>
+    <div class="logo">🎮 Caulfield LAN Party</div>
+    <div class="subtitle">Admin Panel</div>
+  </div>
+  <div class="header-right">
+    <span class="phase-badge phase-idle" id="phaseBadge">IDLE</span>
+    <div class="conn-badge"><span class="dot off" id="connDot"></span><span id="connLabel">Connecting…</span></div>
+  </div>
+</header>
+
+<div class="layout">
+
+  <!-- ── Sidebar ─────────────────────────────────────────────────────────── -->
+  <aside class="sidebar">
+
+    <!-- Timer -->
+    <div class="s-section">
+      <div class="timer-block">
+        <div class="timer-ring">
+          <svg viewBox="0 0 110 110"><circle class="ring-bg" cx="55" cy="55" r="50"/><circle class="ring-arc" id="ringArc" cx="55" cy="55" r="50"/></svg>
+          <div class="timer-text"><span class="timer-num" id="timerNum">—</span><span class="timer-lbl">sec</span></div>
+        </div>
+        <div class="timer-status ts-idle" id="timerStatus">Voting closed</div>
+      </div>
+      <div class="ctrl-row" style="margin-top:10px">
+        <button class="btn-success" id="btnStart">▶ Start</button>
+        <button class="btn-danger btn-sm" id="btnStop" disabled>■ Stop</button>
+        <button class="btn-warn btn-sm" id="btnNextRound" style="display:none">↺ Next Round</button>
+      </div>
+      <div class="ctrl-row" style="margin-top:8px">
+        <button class="btn-ghost btn-sm" id="btnAdd30">+30s</button>
+        <button class="btn-ghost btn-sm" id="btnAdd60">+60s</button>
+        <button class="btn-ghost btn-sm" id="btnResetVotes">↺ Votes</button>
+      </div>
+    </div>
+
+    <!-- Timer duration -->
+    <div class="s-section">
+      <div class="label" style="margin-bottom:10px">Timer Duration</div>
+      <div class="input-row">
+        <input type="number" id="timerInput" min="5" max="3600" placeholder="Seconds" value="60">
+        <button class="btn-primary btn-sm" id="btnSetTimer">Set</button>
+      </div>
+      <div style="display:flex;gap:5px;margin-top:8px;flex-wrap:wrap">
+        <button class="btn-ghost btn-sm" data-preset="30">30s</button>
+        <button class="btn-ghost btn-sm" data-preset="60">1m</button>
+        <button class="btn-ghost btn-sm" data-preset="120">2m</button>
+        <button class="btn-ghost btn-sm" data-preset="180">3m</button>
+        <button class="btn-ghost btn-sm" data-preset="300">5m</button>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="s-section">
+      <div class="stats-row">
+        <div class="stat-box"><div class="stat-val mono" id="sVotes">0</div><div class="stat-lbl">Votes</div></div>
+        <div class="stat-box"><div class="stat-val mono" id="sClients">0</div><div class="stat-lbl">Clients</div></div>
+        <div class="stat-box"><div class="stat-val mono" id="sRound">—</div><div class="stat-lbl">Round</div></div>
+      </div>
+      <div style="font-size:.78rem;color:var(--muted);margin-top:10px" id="voterProgress"></div>
+    </div>
+
+    <!-- Toggles -->
+    <div class="s-section">
+      <div class="label" style="margin-bottom:10px">Feature Toggles</div>
+      <div class="ctrl-row">
+        <button class="btn-ghost btn-sm" id="btnNoms">📋 Nominations: OFF</button>
+        <button class="btn-ghost btn-sm" id="btnVeto">🚫 Veto: OFF</button>
+      </div>
+    </div>
+
+    <!-- Broadcast -->
+    <div class="s-section">
+      <div class="label" style="margin-bottom:10px">Broadcast Message</div>
+      <div class="input-row" style="margin-bottom:8px">
+        <input type="text" id="broadcastInput" placeholder="Message to all screens…" maxlength="120">
+        <button class="btn-primary btn-sm" id="btnBroadcast">📢</button>
+      </div>
+      <div id="activeBroadcast" style="display:none">
+        <div class="broadcast-active">
+          <span id="activeBroadcastText"></span>
+          <button class="btn-ghost btn-xs" id="btnClearBroadcast" style="margin-left:auto;flex-shrink:0">✕ Clear</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- QR Code -->
+    <div class="s-section">
+      <div class="label" style="margin-bottom:10px">Client QR Code</div>
+      <div class="qr-box">
+        <img id="qrImg" src="/api/qr.svg" alt="QR Code">
+        <div class="qr-url" id="qrUrl">Loading…</div>
+      </div>
+    </div>
+
+  </aside>
+
+  <!-- ── Main ────────────────────────────────────────────────────────────── -->
+  <main class="main">
+
+    <!-- Tiebreaker banner -->
+    <div class="tie-banner" id="tieBanner" style="display:none; margin:16px 20px 0; flex-shrink:0">
+      <h3>⚔️ TIEBREAKER IN PROGRESS</h3>
+      <p id="tieBannerGames">Tied games are shown below</p>
+    </div>
+
+    <!-- Waiting for voters banner -->
+    <div class="banner banner-wait" id="waitBanner" style="display:none; margin:16px 20px 0; flex-shrink:0">
+      ⏳ Timer expired — waiting for minimum voters to cast their vote
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab-btn" data-tab="results">📊 Results</button>
+      <button class="tab-btn active" data-tab="games">🎮 Games</button>
+      <button class="tab-btn" data-tab="players">👥 Players</button>
+      <button class="tab-btn" data-tab="noms">📋 Noms<span class="badge-count" id="nomsCount" style="display:none">0</span></button>
+      <button class="tab-btn" data-tab="history">📜 History</button>
+      <button class="tab-btn" data-tab="settings">⚙️ Settings</button>
+    </div>
+
+    <!-- Results tab -->
+    <div class="tab-pane" data-pane="results">
+      <div class="game-list" id="resultsList"><div class="empty">Add games to see results</div></div>
+    </div>
+
+    <!-- Games tab -->
+    <div class="tab-pane active" data-pane="games">
+      <div class="card">
+        <div class="card-title">Add Game</div>
+        <div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap">
+          <div style="flex:1;min-width:160px">
+            <div class="label" style="margin-bottom:6px">Game Name</div>
+            <input type="text" id="addGameName" placeholder="e.g. Counter-Strike 2" maxlength="80">
+          </div>
+          <div style="width:100px">
+            <div class="label" style="margin-bottom:6px">Emoji</div>
+            <input type="text" id="addGameEmoji" placeholder="🎮" maxlength="4" style="text-align:center">
+          </div>
+          <button class="btn-primary" id="btnAddGame">Add</button>
+        </div>
+      </div>
+      <div class="card">
+        <div style="display:flex;align-items:center;margin-bottom:14px">
+          <div class="card-title" style="margin:0;flex:1">Game List</div>
+          <button class="btn-danger btn-xs" id="btnClearGames">Clear All</button>
+        </div>
+        <div class="game-items" id="adminGameItems"><div class="empty">No games added</div></div>
+      </div>
+    </div>
+
+    <!-- Players tab -->
+    <div class="tab-pane" data-pane="players">
+      <div class="card">
+        <div class="card-title">Connected Players</div>
+        <div style="font-size:.8rem;color:var(--muted);margin-bottom:14px">Set a player's vote weight to reward last round's winner. Their single vote counts as N votes.</div>
+        <div class="player-items" id="playerList"><div class="empty">No clients connected</div></div>
+      </div>
+    </div>
+
+    <!-- Nominations tab -->
+    <div class="tab-pane" data-pane="noms">
+      <div id="nomsOpenStatus" class="banner banner-closed" style="margin-bottom:4px">Nominations are closed</div>
+      <div class="card">
+        <div class="card-title">Pending Nominations</div>
+        <div class="nom-items" id="nomList"><div class="empty">No pending nominations</div></div>
+      </div>
+    </div>
+
+    <!-- History tab -->
+    <div class="tab-pane" data-pane="history">
+      <div class="card">
+        <div class="card-title">Round History</div>
+        <div class="hist-items" id="histList"><div class="empty">No rounds played yet</div></div>
+      </div>
+    </div>
+
+    <!-- Settings tab -->
+    <div class="tab-pane" data-pane="settings">
+
+      <div class="card">
+        <div class="card-title">Voting Settings</div>
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <label style="display:flex;align-items:center;gap:10px;font-size:.88rem">
+            <input type="checkbox" id="weightedCheck"> Enable weighted voting
+          </label>
+          <div>
+            <div class="label" style="margin-bottom:6px">Minimum voters before voting can end (0 = disabled)</div>
+            <div class="input-row" style="max-width:240px">
+              <input type="number" id="minVotersInput" min="0" max="100" placeholder="0">
+              <button class="btn-primary btn-sm" id="btnSetMinVoters">Set</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Presets</div>
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div>
+            <div class="label" style="margin-bottom:6px">Save current games as preset</div>
+            <div class="input-row">
+              <input type="text" id="presetNameInput" placeholder="Preset name…" maxlength="50">
+              <button class="btn-primary btn-sm" id="btnSavePreset">Save</button>
+            </div>
+          </div>
+          <div>
+            <div class="label" style="margin-bottom:8px">Saved Presets</div>
+            <div class="preset-list" id="presetList"><div class="empty">No presets saved</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Admin Password</div>
+        <div style="display:flex;flex-direction:column;gap:8px;max-width:360px">
+          <input type="password" id="curPwd" placeholder="Current password">
+          <input type="password" id="newPwd" placeholder="New password">
+          <button class="btn-primary btn-sm" id="btnChangePwd" style="align-self:flex-start">Change Password</button>
+          <div class="modal-err" id="pwdErr"></div>
+        </div>
+      </div>
+
+    </div><!-- /settings -->
+
+  </main>
+</div><!-- /layout -->
+
+<!-- Winner overlay -->
+<div class="winner-overlay" id="winnerOverlay">
+  <div class="winner-crown">🏆</div>
+  <div class="winner-label">Winner</div>
+  <div class="winner-emoji-big" id="woEmoji">🎮</div>
+  <div class="winner-name"  id="woName">—</div>
+  <div class="winner-votes" id="woVotes"></div>
+  <div class="winner-breakdown" id="woBreakdown"></div>
+  <button class="btn-primary" id="btnNextRound2" style="margin-top:12px;font-size:1rem;padding:12px 28px">↺ Start Next Round</button>
+</div>
+
+</div><!-- /adminApp -->
+
+<div id="toast"></div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="sounds.js"></script>
+<script src="confetti.js"></script>
+<script src="admin.js"></script>
+</body>
+</html>

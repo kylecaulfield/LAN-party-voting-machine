@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Caulfield LAN Party — Display</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="display-body">
+
+<div class="display-header">
+  <div>
+    <div class="display-logo">🎮 Caulfield LAN Party</div>
+  </div>
+  <div class="display-meta">
+    <span class="phase-badge phase-idle" id="phaseBadge">IDLE</span>
+    <div class="display-timer" id="displayTimer">
+      <div class="display-timer-num" id="timerNum">—</div>
+      <div style="font-size:.65rem;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted);font-weight:700">seconds</div>
+    </div>
+    <div class="conn-badge"><span class="dot off" id="connDot"></span></div>
+  </div>
+</div>
+
+<!-- Broadcast banner -->
+<div id="broadcastBanner" class="broadcast-banner" style="display:none"></div>
+
+<!-- Tiebreaker banner -->
+<div class="tie-banner" id="tieBanner" style="display:none; margin:16px 24px 0; border-radius:10px">
+  <h3 style="font-size:1.1rem">⚔️ TIEBREAKER IN PROGRESS</h3>
+  <p id="tieBannerGames"></p>
+</div>
+
+<!-- Waiting for voters banner -->
+<div class="banner banner-wait" id="waitBanner" style="display:none; margin:16px 24px 0">
+  ⏳ Timer ended — waiting for minimum voters
+</div>
+
+<div class="display-content" id="displayContent">
+  <div class="empty" style="font-size:1.1rem;padding:60px">Waiting for voting to start…</div>
+</div>
+
+<div class="display-footer">
+  <span>Round <strong id="footRound">—</strong></span>
+  <span>👥 <strong id="footVoted">0</strong> / <strong id="footPlayers">0</strong> voted</span>
+  <span style="margin-left:auto;font-size:.8rem">Display mode — no controls</span>
+</div>
+
+<!-- Winner overlay -->
+<div class="display-winner" id="displayWinner">
+  <div class="dw-crown">🏆</div>
+  <div class="dw-label">Winner — Round <span id="dwRound">1</span></div>
+  <div class="dw-emoji" id="dwEmoji">🎮</div>
+  <div class="dw-name"  id="dwName">—</div>
+  <div class="dw-votes" id="dwVotes"></div>
+</div>
+
+<div id="toast"></div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="sounds.js"></script>
+<script src="confetti.js"></script>
+<script src="wheel.js"></script>
+<script src="display.js"></script>
+</body>
+</html>
