@@ -14,7 +14,12 @@ function loadData() {
   try {
     if (fs.existsSync(DATA_FILE)) return JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
   } catch (e) { console.error('data.json load error:', e.message); }
-  return { history: [], presets: {}, adminPassword: 'admin', settings: { defaultTimer: 60, minVoters: 0 } };
+  const defaults = { history: [], presets: {}, adminPassword: 'admin', settings: { defaultTimer: 60, minVoters: 0 } };
+  try {
+    fs.writeFileSync(DATA_FILE, JSON.stringify(defaults, null, 2));
+    console.log(`Created ${DATA_FILE} with defaults`);
+  } catch (e) { console.error('data.json create error:', e.message); }
+  return defaults;
 }
 
 function saveData() {
