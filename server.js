@@ -333,6 +333,17 @@ const io     = new Server(server);
 
 app.use(express.static(path.join(__dirname, 'public')));
 
+const pkg = require('./package.json');
+app.get('/api/version', (req, res) => {
+  res.json({
+    version:   pkg.version,
+    gitSha:    process.env.GIT_SHA    || null,
+    gitRef:    process.env.GIT_REF    || null,
+    buildTime: process.env.BUILD_TIME || null,
+    repoUrl:   process.env.REPO_URL   || 'https://github.com/kylecaulfield/LAN-party-voting-machine',
+  });
+});
+
 app.get('/api/client-url', (req, res) => {
   res.json({ url: `http://${getLocalIP()}:${PORT}/` });
 });

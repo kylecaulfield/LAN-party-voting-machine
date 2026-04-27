@@ -1,6 +1,41 @@
 'use strict';
 const socket = io();
 
+// ── Version info ───────────────────────────────────────────────────────────
+(async function renderVersion() {
+  const el = document.getElementById('versionInfo');
+  if (!el) return;
+  let info;
+  try {
+    info = await (await fetch('/api/version')).json();
+  } catch (e) { return; }
+
+  const repo      = (info.repoUrl || '').replace(/\/+$/, '');
+  const sha       = info.gitSha || '';
+  const shortSha  = sha ? sha.slice(0, 7) : 'dev';
+  const commitUrl = (repo && sha && sha !== 'unknown') ? `${repo}/commit/${sha}` : repo;
+  const label     = `v${info.version}${sha && sha !== 'unknown' ? ` · ${shortSha}` : ''}`;
+  el.innerHTML = `<a href="${commitUrl}" target="_blank" rel="noopener" title="View this build on GitHub" style="color:inherit;text-decoration:none">${label}</a> <span id="updateBadge"></span>`;
+
+  const m = repo.match(/github\.com\/([^/]+)\/([^/]+?)(?:\.git)?$/);
+  if (!m || !/^[0-9a-f]{40}$/.test(sha)) return;
+  const [, owner, name] = m;
+
+  try {
+    const latest = await (await fetch(`https://api.github.com/repos/${owner}/${name}/commits/main`,
+                          { headers: { Accept: 'application/vnd.github+json' } })).json();
+    const badge = document.getElementById('updateBadge');
+    if (!badge || !latest || !latest.sha) return;
+    if (latest.sha === sha) {
+      badge.textContent = '✓ latest';
+      badge.style.color = 'var(--green, #4ade80)';
+    } else {
+      const url = `${repo}/compare/${sha}...${latest.sha}`;
+      badge.innerHTML = `<a href="${url}" target="_blank" rel="noopener" style="color:var(--yellow,#facc15);text-decoration:none">↑ update available</a>`;
+    }
+  } catch (e) { /* offline / rate-limited — skip */ }
+})();
+
 // ── Auth ───────────────────────────────────────────────────────────────────
 const loginModal = document.getElementById('loginModal');
 const loginPwd   = document.getElementById('loginPwd');
