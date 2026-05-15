@@ -468,7 +468,7 @@ io.on('connection', socket => {
   socket.on('admin_remove_game', id => {
     if (!socket.isAdmin) return;
     state.games = state.games.filter(g => g.id !== id);
-    Object.keys(state.votes).forEach(s => { if (state.votes[s] === id) delete state.votes[s]; });
+    Object.keys(state.votes).forEach(s => { if (state.votes[s] === id) { delete state.locked[s]; delete state.votes[s]; } });
     Object.keys(state.vetoes).forEach(s => { if (state.vetoes[s] === id) delete state.vetoes[s]; });
     broadcastAll(); saveData();
   });
@@ -496,11 +496,8 @@ io.on('connection', socket => {
 
   socket.on('admin_stop_voting', () => {
     if (!socket.isAdmin) return;
-    timerStop();
-    state.phase = 'idle';
     state.votes = {}; state.voteTs = {}; state.locked = {};
-    state.waitingForVoters = false;
-    broadcastAll();
+    transition('idle');
   });
 
   socket.on('admin_next_round', () => {
@@ -592,7 +589,7 @@ io.on('connection', socket => {
     if (!socket.isAdmin || !state.presets[name]) return;
     state.games  = state.presets[name].map(g => ({ id: uid(), name: g.name, emoji: g.emoji || '🎮', played: false, vetoed: false }));
     state.votes  = {}; state.vetoes = {};
-    broadcastAll();
+    broadcastAll(); saveData();
   });
 
   socket.on('admin_delete_preset', name => {
@@ -656,7 +653,7 @@ function getLocalIP() {
   return ips[0]?.address || 'localhost';
 }
 
-const PORT = process.env.PORT || 2000;
+const PORT = process.env.PORT || 3000;
 server.listen(PORT, '0.0.0.0', () => {
   const ip = getLocalIP();
   console.log('\n🎮  Caulfield LAN Party Vote Server');
